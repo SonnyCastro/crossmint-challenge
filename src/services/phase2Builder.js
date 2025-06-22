@@ -1,115 +1,65 @@
-const axios = require("axios");
-require("dotenv").config();
+const MapParser = require("./MapParser");
 
-const BASE_URL = process.env.BASE_URL;
-const CANDIDATE_ID = process.env.CANDIDATE_ID;
-
-const api = axios.create({
-  baseURL: BASE_URL,
-  headers: { "Content-Type": "application/json" }
-});
-
-// Get the full goal map
-async function fetchGoalMap() {
-  try {
-    const res = await api.get(`/map/${CANDIDATE_ID}/goal`);
-    return res.data.goal;
-  } catch (err) {
-    console.error("❌ Error fetching goal map:", err.message);
-    return [];
+class Phase2Builder {
+  constructor(client) {
+    this.client = client;
   }
-}
 
-// POST any type of entity
-async function postEntity(type, row, column, extra = {}) {
-  try {
-    await api.post(`/${type}`, {
-      row,
-      column,
-      candidateId: CANDIDATE_ID,
-      ...extra
+  async buildFromGoalMap() {
+    console.log("🚀 Starting Phase 2: Building from goal map...");
+    const goalMap = await this.client.getGoalMap();
+    console.log(goalMap, 'goalMap')
+    const entities = MapParser.parse(goalMap);
+    console.log(entities, 'entities')
+
+    // Create a quick lookup for POLYANET locations for validation
+    const polyanetLocations = new Set();
+    entities.forEach(entity => {
+      if (entity.constructor.name === 'Polyanet') {
+        polyanetLocations.add(`${entity.row},${entity.column}`);
+      }
     });
-    console.log(`✅ Created ${type} at (${row}, ${column})`, extra);
-    return true;
-  } catch (err) {
-    console.error(`❌ Failed to create ${type} at (${row}, ${column})`, err.response?.data || err.message);
-    return false;
-  }
-}
+    console.log(polyanetLocations, 'polyanetLocations')
 
-
-// Parse string to determine entity type and any extra args
-function parseCell(cellValue) {
-  if (!cellValue || cellValue === "SPACE") return null;
-
-  if (cellValue === "POLYANET") {
-    return { type: "polyanets" };
-  }
-
-  if (cellValue.endsWith("_SOLOON")) {
-    const color = cellValue.split("_")[0].toLowerCase();
-    return { type: "soloons", extra: { color } };
-  }
-
-  if (cellValue.endsWith("_COMETH")) {
-    const direction = cellValue.split("_")[0].toLowerCase();
-    return { type: "comeths", extra: { direction } };
-  }
-
-  return null;
-}
-
-// Loop through the grid and POST all valid astral objects
-async function buildFromGoalMap() {
-  const map = await fetchGoalMap();
-
-  const isPolyanetAt = (r, c) =>
-    r >= 0 &&
-    r < map.length &&
-    c >= 0 &&
-    c < map[0].length &&
-    map[r][c] === "POLYANET";
-
-  for (let row = 0; row < map.length; row++) {
-    for (let col = 0; col < map[row].length; col++) {
-      const cell = map[row][col];
-      const parsed = parseCell(cell);
-      if (!parsed) continue;
-
-      const { type, extra = {} } = parsed;
-
+    for (const entity of entities) {
       // For SOLOON, validate adjacent POLYANET
-      if (
-        type === "soloons" &&
-        !(
-          isPolyanetAt(row - 1, col) ||
-          isPolyanetAt(row + 1, col) ||
-          isPolyanetAt(row, col - 1) ||
-          isPolyanetAt(row, col + 1)
-        )
-      ) {
-        console.warn(`⏭️ Skipping SOLOON at (${row}, ${col}) — no adjacent POLYANET`);
-        continue;
-      }
+      if (entity.constructor.name === 'Soloon') {
+        const isAdjacent =
+          polyanetLocations.has(`${entity.row - 1},${entity.column}`) ||
+          polyanetLocations.has(`${entity.row + 1},${entity.column}`) ||
+          polyanetLocations.has(`${entity.row},${entity.column - 1}`) ||
+          polyanetLocations.has(`${entity.row},${entity.column + 1}`);
 
-      let attempts = 0;
-      let success = false;
-
-      while (!success && attempts < 5) {
-        success = await postEntity(type, row, col, extra);
-        if (!success) {
-          console.log(`🔁 Retrying in 1s...`);
-          await new Promise((r) => setTimeout(r, 1000));
+        if (!isAdjacent) {
+          console.warn(`⏭️ Skipping SOLOON at (${entity.row}, ${entity.column}) — no adjacent POLYANET`, entity);
+          continue;
         }
-        attempts++;
       }
 
-      await new Promise((r) => setTimeout(r, 500));
+      await this.createEntityWithRetries(entity);
+    }
+
+    console.log("✅ Phase 2 completed!");
+  }
+
+  async createEntityWithRetries(entity, maxRetries = 5) {
+    let attempts = 0;
+    while (attempts < maxRetries) {
+      try {
+        await this.client.createEntity(entity);
+        await new Promise(resolve => setTimeout(resolve, 500)); // Delay between requests
+        return; // Success
+      } catch (error) {
+        attempts++;
+        if (attempts >= maxRetries) {
+          console.error(`❌ Failed to create entity at (${entity.row}, ${entity.column}) after ${maxRetries} attempts.`);
+          throw error;
+        }
+        console.log(`🔁 Retrying entity at (${entity.row}, ${entity.column}) in 1s... (${attempts}/${maxRetries})`);
+        await new Promise(resolve => setTimeout(resolve, 1000));
+      }
     }
   }
 }
 
-
-module.exports = {
-  buildFromGoalMap
-};
+module.exports = Phase2Builder;

@@ -1,27 +1,46 @@
 const axios = require("axios");
 require("dotenv").config();
 
-const api = axios.create({
-  baseURL: process.env.BASE_URL,
-  headers: {
-    "Content-Type": "application/json"
-  }
-});
-
-async function createPolyanet(row, column) {
-  try {
-    const response = await api.post("/polyanets", {
-      row,
-      column,
-      candidateId: process.env.CANDIDATE_ID
+class CrossmintClient {
+  constructor(candidateId, baseUrl) {
+    this.candidateId = candidateId;
+    this.api = axios.create({
+      baseURL: baseUrl,
+      headers: {
+        "Content-Type": "application/json"
+      }
     });
-    console.log(`Polyanet created at (${row}, ${column})`);
-    return response.data;
-  } catch (error) {
-    console.error(`Error creating Polyanet at (${row}, ${column}):`, error.message);
+  }
+
+  async createEntity(entity) {
+    try {
+      const endpoint = entity.apiEndpoint;
+      const payload = entity.getPayload(this.candidateId);
+      console.log(`POST ${endpoint} at (${entity.row}, ${entity.column})`);
+      const response = await this.api.post(endpoint, payload);
+      return response.data;
+    } catch (error) {
+      console.error(
+        `Error creating entity at (${entity.row}, ${entity.column}):`,
+        error.response ? error.response.data : error.message
+      );
+      // Re-throw the error so the caller can handle retries
+      throw error;
+    }
+  }
+
+  async getGoalMap() {
+    try {
+      const response = await this.api.get(`/map/${this.candidateId}/goal`);
+      return response.data.goal;
+    } catch (error) {
+      console.error(
+        "Error fetching goal map:",
+        error.response ? error.response.data : error.message
+      );
+      throw error;
+    }
   }
 }
 
-module.exports = {
-  createPolyanet
-};
+module.exports = CrossmintClient;
