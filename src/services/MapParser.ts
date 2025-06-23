@@ -1,10 +1,13 @@
-const Polyanet = require("../entities/Polyanet");
-const Soloon = require("../entities/Soloon");
-const Cometh = require("../entities/Cometh");
+import { Polyanet } from "../entities/Polyanet";
+import { Soloon } from "../entities/Soloon";
+import { Cometh, Direction } from "../entities/Cometh";
+import { IEntity } from "../entities/Entity";
 
-class MapParser {
-  static parse(goalMap) {
-    const entities = [];
+type GoalMap = string[][];
+
+export class MapParser {
+  static parse(goalMap: GoalMap): IEntity[] {
+    const entities: IEntity[] = [];
     for (let row = 0; row < goalMap.length; row++) {
       for (let col = 0; col < goalMap[row].length; col++) {
         const cellValue = goalMap[row][col];
@@ -17,7 +20,7 @@ class MapParser {
     return entities;
   }
 
-  static parseCell(row, col, cellValue) {
+  static parseCell(row: number, col: number, cellValue: string): IEntity | null {
     if (!cellValue || cellValue === "SPACE") {
       return null;
     }
@@ -32,12 +35,10 @@ class MapParser {
     }
 
     if (cellValue.endsWith("_COMETH")) {
-      const direction = cellValue.split("_")[0].toLowerCase();
+      const direction = cellValue.split("_")[0].toLowerCase() as Direction;
       return new Cometh(row, col, direction);
     }
 
     return null;
   }
-}
-
-module.exports = MapParser; 
+} 

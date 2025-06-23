@@ -1,8 +1,7 @@
-require("dotenv").config();
-
-const CrossmintClient = require("./api/client");
-const { createXPattern } = require("./services/megaverseBuilder");
-const Phase2Builder = require("./services/phase2builder");
+import "dotenv/config";
+import { CrossmintClient } from "./api/client";
+import { createXPattern } from "./services/megaverseBuilder";
+import { Phase2Builder } from "./services/phase2builder";
 
 async function main() {
   const candidateId = process.env.CANDIDATE_ID;
@@ -23,9 +22,9 @@ async function main() {
     // Phase 2
     const phase2Builder = new Phase2Builder(client);
     await phase2Builder.buildFromGoalMap();
-
   } catch (error) {
-    console.error("💥 An unexpected error occurred:", error.message);
+    const err = error as Error;
+    console.error("💥 An unexpected error occurred:", err.message);
   }
 }
 

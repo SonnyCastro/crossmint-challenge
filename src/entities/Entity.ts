@@ -1,5 +1,15 @@
-class Entity {
-  constructor(row, column) {
+export interface IEntity {
+  row: number;
+  column: number;
+  readonly apiEndpoint: string;
+  getPayload(candidateId: string): object;
+}
+
+export abstract class Entity implements IEntity {
+  row: number;
+  column: number;
+
+  constructor(row: number, column: number) {
     if (this.constructor === Entity) {
       throw new Error("Abstract class 'Entity' cannot be instantiated directly.");
     }
@@ -7,26 +17,18 @@ class Entity {
     this.column = column;
   }
 
-  /**
-   * Returns the API endpoint for the entity.
-   * To be implemented by subclasses.
-   */
-  get apiEndpoint() {
-    throw new Error("Method 'apiEndpoint()' must be implemented.");
-  }
+  abstract get apiEndpoint(): string;
 
   /**
    * Returns the payload for the API request.
    * Can be extended by subclasses.
    * @param {string} candidateId - The candidate ID for the API.
    */
-  getPayload(candidateId) {
+  getPayload(candidateId: string): object {
     return {
       row: this.row,
       column: this.column,
-      candidateId
+      candidateId,
     };
   }
 }
-
-module.exports = Entity; 
