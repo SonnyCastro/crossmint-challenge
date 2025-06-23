@@ -1,23 +1,17 @@
 {
   "compilerOptions": {
-    /* Base Options */
-    "target": "ES2020",                       // The version of JavaScript the compiler will output. ES2020 is a good modern default.
-    "module": "commonjs",                     // The module system to use. Since we use `require`, `commonjs` is correct.
-    "outDir": "./dist",                       // Where to put the compiled .js files.
-    "rootDir": "./src",                       // The root directory of our source files.
-    
-    /* Strictness */
-    "strict": true,                           // Enables all strict type-checking options. This is best practice.
-    "noImplicitAny": true,                    // Raise error on expressions and declarations with an implied 'any' type.
-
-    /* Module Resolution */
-    "moduleResolution": "node",               // How the compiler looks for modules. 'node' is standard.
-    "esModuleInterop": true,                  // Allows us to import CommonJS modules seamlessly.
-    
-    /* Advanced Options */
-    "skipLibCheck": true,                     // Skip type checking of all declaration files (*.d.ts).
-    "forceConsistentCasingInFileNames": true  // Disallow inconsistently-cased references to the same file.
+    "target": "ES2020",
+    "module": "ES2020",
+    "outDir": "./dist",
+    "rootDir": "./src",
+    "strict": true,
+    "noImplicitAny": true,
+    "moduleResolution": "node",
+    "esModuleInterop": true,
+    "allowSyntheticDefaultImports": true,
+    "skipLibCheck": true,
+    "forceConsistentCasingInFileNames": true
   },
-  "include": ["src/**/*"],                    // Tells the compiler to only look at files inside the `src` directory.
-  "exclude": ["node_modules", "**/*.spec.ts"] // Ignore these directories.
+  "include": ["src/**/*"],
+  "exclude": ["node_modules", "**/*.spec.ts"]
 } 
