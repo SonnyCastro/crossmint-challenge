@@ -1,6 +1,12 @@
-const Polyanet = require("../entities/Polyanet");
+import { Polyanet } from "../entities/Polyanet";
+import { CrossmintClient } from "../api/client";
 
-async function createXPattern(client, startRow = 0, startColumn = 0, size = 11) {
+export async function createXPattern(
+  client: CrossmintClient,
+  startRow: number = 0,
+  startColumn: number = 0,
+  size: number = 11
+) {
   for (let i = 0; i < size; i++) {
     const row = startRow + i;
 
@@ -15,7 +21,3 @@ async function createXPattern(client, startRow = 0, startColumn = 0, size = 11) 
     }
   }
 }
-
-module.exports = {
-  createXPattern
-};

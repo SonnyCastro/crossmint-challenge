@@ -1,11 +1,15 @@
-const MapParser = require("./MapParser");
+import { MapParser } from "./MapParser";
+import { CrossmintClient } from "../api/client";
+import { IEntity } from "../entities/Entity";
 
-class Phase2Builder {
-  constructor(client) {
+export class Phase2Builder {
+  private client: CrossmintClient;
+
+  constructor(client: CrossmintClient) {
     this.client = client;
   }
 
-  async buildFromGoalMap() {
+  async buildFromGoalMap(): Promise<void> {
     console.log("🚀 Starting Phase 2: Building from goal map...");
     const goalMap = await this.client.getGoalMap();
     console.log(goalMap, 'goalMap')
@@ -13,17 +17,16 @@ class Phase2Builder {
     console.log(entities, 'entities')
 
     // Create a quick lookup for POLYANET locations for validation
-    const polyanetLocations = new Set();
-    entities.forEach(entity => {
-      if (entity.constructor.name === 'Polyanet') {
+    const polyanetLocations = new Set<string>();
+    entities.forEach((entity) => {
+      if (entity.constructor.name === "Polyanet") {
         polyanetLocations.add(`${entity.row},${entity.column}`);
       }
     });
-    console.log(polyanetLocations, 'polyanetLocations')
 
     for (const entity of entities) {
       // For SOLOON, validate adjacent POLYANET
-      if (entity.constructor.name === 'Soloon') {
+      if (entity.constructor.name === "Soloon") {
         const isAdjacent =
           polyanetLocations.has(`${entity.row - 1},${entity.column}`) ||
           polyanetLocations.has(`${entity.row + 1},${entity.column}`) ||
@@ -42,12 +45,15 @@ class Phase2Builder {
     console.log("✅ Phase 2 completed!");
   }
 
-  async createEntityWithRetries(entity, maxRetries = 5) {
+  async createEntityWithRetries(
+    entity: IEntity,
+    maxRetries: number = 5
+  ): Promise<void> {
     let attempts = 0;
     while (attempts < maxRetries) {
       try {
         await this.client.createEntity(entity);
-        await new Promise(resolve => setTimeout(resolve, 500)); // Delay between requests
+        await new Promise((resolve) => setTimeout(resolve, 500)); // Delay between requests
         return; // Success
       } catch (error) {
         attempts++;
@@ -56,10 +62,8 @@ class Phase2Builder {
           throw error;
         }
         console.log(`🔁 Retrying entity at (${entity.row}, ${entity.column}) in 1s... (${attempts}/${maxRetries})`);
-        await new Promise(resolve => setTimeout(resolve, 1000));
+        await new Promise((resolve) => setTimeout(resolve, 1000));
       }
     }
   }
 }
-
-module.exports = Phase2Builder;
