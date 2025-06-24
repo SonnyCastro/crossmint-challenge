@@ -2,9 +2,12 @@
   "name": "megaverse-challenge",
   "version": "1.0.0",
   "main": "index.js",
+  "type": "module",
   "scripts": {
-    "start": "ts-node src/main.ts",
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "start": "node --loader ts-node/esm src/main.ts",
+    "dev": "ts-node --esm src/main.ts",
+    "build": "tsc",
+    "hybrid-dry-run": "node --loader ts-node/esm src/test/hybrid-dry-run.ts"
   },
   "keywords": [],
   "author": "",
