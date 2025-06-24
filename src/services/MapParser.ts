@@ -20,25 +20,30 @@ export class MapParser {
     return entities;
   }
 
-  static parseCell(row: number, col: number, cellValue: string): IEntity | null {
+  static parseCell(row: number, col: number, cellValue: any): IEntity | null {
     if (!cellValue || cellValue === "SPACE") {
       return null;
     }
-
-    if (cellValue === "POLYANET") {
-      return new Polyanet(row, col);
+    // Handle string format
+    if (typeof cellValue === "string") {
+      if (cellValue === "POLYANET") {
+        return new Polyanet(row, col);
+      }
+      if (cellValue.endsWith("_SOLOON")) {
+        const color = cellValue.split("_")[0].toLowerCase();
+        return new Soloon(row, col, color);
+      }
+      if (cellValue.endsWith("_COMETH")) {
+        const direction = cellValue.split("_")[0].toLowerCase() as Direction;
+        return new Cometh(row, col, direction);
+      }
     }
-
-    if (cellValue.endsWith("_SOLOON")) {
-      const color = cellValue.split("_")[0].toLowerCase();
-      return new Soloon(row, col, color);
+    // Handle object format
+    if (typeof cellValue === "object") {
+      if (cellValue.type === 0) return new Polyanet(row, col);
+      if (cellValue.type === 1) return new Soloon(row, col, cellValue.color);
+      if (cellValue.type === 2) return new Cometh(row, col, cellValue.direction);
     }
-
-    if (cellValue.endsWith("_COMETH")) {
-      const direction = cellValue.split("_")[0].toLowerCase() as Direction;
-      return new Cometh(row, col, direction);
-    }
-
     return null;
   }
 } 
